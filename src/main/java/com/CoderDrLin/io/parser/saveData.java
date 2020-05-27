@@ -1,5 +1,7 @@
 package com.CoderDrLin.io.parser;
 
+import com.alibaba.fastjson.JSONObject;
+
 import java.beans.JavaBean;
 import java.net.URL;
 import java.util.Objects;
@@ -47,5 +49,11 @@ public class saveData{
     @Override
     public int hashCode() {
         return Objects.hash(url);
+    }
+    public String getJSON(){
+        JSONObject job = new JSONObject();
+        job.put("title",title);
+        job.put("url",url);
+        return job.toJSONString();
     }
 }

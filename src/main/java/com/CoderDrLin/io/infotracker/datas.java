@@ -10,11 +10,9 @@ public class datas {
     static void add(saveData saveData){
         data.add(saveData);
     }
-
     public static List<saveData> getData() {
         return data;
     }
-
     public static  String getString() {
         StringBuffer sb = new StringBuffer();
         for (saveData datum : data) {

@@ -1,10 +1,9 @@
 package com.CoderDrLin.io.SQliteCodes;
 
-import com.alibaba.fastjson.JSONObject;
-import org.springframework.jdbc.core.RowMapper;
+
+import com.CoderDrLin.io.messagePrinter;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -27,13 +26,21 @@ public class MySQLiteDataManager {
      * @return
      */
     public int insertWebsiteConfiguration(String url,String configJSON){
+        messagePrinter.print("insertWebsiteConfiguration","insert",url,configJSON);
         if(sh == null){
+            messagePrinter.print("insertWebsiteConfiguration","sh is null",url,configJSON);
             return -2;//空
         }
         try{
+            String isExisted = String.format("SELECT * FROM websiteConfiguration WHERE url = '%s' AND config = '%s' ",url,configJSON);
+            List<websiteConfiguration> result =  sh.executeQueryList(isExisted,websiteConfiguration.class);
+            if(result.size() == 1){
+                messagePrinter.print("insertWebsiteConfiguration","existed",url,configJSON);
+                return result.get(0).getId();//存在 则直接返回
+            }
             String max = "SELECT MAX(ID) FROM websiteConfiguration ";
-            List<Integer> result =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
-            int maxID = result.get(0);
+            List<Integer> maxIDList =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
+            int maxID = maxIDList.size() == 1 ? maxIDList.get(0):-1 ;
             int id = maxID + 1;
             Date time = new Date(System.currentTimeMillis());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -45,9 +52,11 @@ public class MySQLiteDataManager {
             insertData.put("addDate",current);
             insertData.put("disabled","false");
             sh.executeInsert("websiteConfiguration",insertData);
+            messagePrinter.print("insertWebsiteConfiguration","ok",url,configJSON);
             return id;
         }catch (Exception e){
             e.printStackTrace();
+            messagePrinter.print("insertWebsiteConfiguration","error",url,configJSON,e.getMessage());
             return -1;//出现错误
         }
     }
@@ -99,13 +108,21 @@ public class MySQLiteDataManager {
      * @return
      */
     public int insertKeyWords(String keyword,int webSiteIndex){
+        messagePrinter.print("insertKeyWords","insert",keyword,webSiteIndex+"");
         if(sh == null){
+            messagePrinter.print("insertKeyWords","sh is null",keyword,webSiteIndex+"");
             return -2;//空
         }
         try{
+            String isExisted = String.format("SELECT * FROM keyWords WHERE keyword = '%s' AND websiteIndex = %d ",keyword,webSiteIndex);
+            List<keyWords> result =  sh.executeQueryList(isExisted,keyWords.class);
+            if(result.size() == 1){
+                messagePrinter.print("insertKeyWords","existed",keyword,webSiteIndex+"");
+                return result.get(0).getId();//存在 则直接返回
+            }
             String max = "SELECT MAX(ID) FROM keyWords ";
-            List<Integer> result =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
-            int maxID = result.size() == 0 ? -1:result.get(0);
+            List<Integer> maxIDList =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
+            int maxID = maxIDList.size() == 1 ? maxIDList.get(0):-1 ;
             int id = maxID + 1;
             Date time = new Date(System.currentTimeMillis());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -117,9 +134,11 @@ public class MySQLiteDataManager {
             insertData.put("addDate",current);
             insertData.put("disabled","false");
             sh.executeInsert("keyWords",insertData);
+            messagePrinter.print("insertKeyWords","ok",keyword,webSiteIndex+"");
             return id;
         }catch (Exception e){
             e.printStackTrace();
+            messagePrinter.print("insertKeyWords","error",keyword,webSiteIndex+"",e.getMessage());
             return -1;//出现错误
         }
     }
@@ -188,13 +207,21 @@ public class MySQLiteDataManager {
      * @return
      */
     public int insertDataRecords(String dataJSON,int webSiteIndex,int keyWordIndex){
+        messagePrinter.print("insertDataRecords","insert",dataJSON,webSiteIndex+"",keyWordIndex+"");
         if(sh == null){
+            messagePrinter.print("insertDataRecords","sh is null",dataJSON,webSiteIndex+"",keyWordIndex+"");
             return -2;//空
         }
         try{
+            String isExisted = String.format("SELECT * FROM dataRecords WHERE dataJSON = '%s' AND webSiteIndex = %d AND keyWordIndex = %d ",dataJSON,webSiteIndex,keyWordIndex);
+            List<dataRecords> result =  sh.executeQueryList(isExisted,dataRecords.class);
+            if(result.size() == 1){
+                messagePrinter.print("insertDataRecords","existed",dataJSON,webSiteIndex+"",keyWordIndex+"");
+                return result.get(0).getId();//存在 则直接返回
+            }
             String max = "SELECT MAX(ID) FROM dataRecords ";
-            List<Integer> result =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
-            int maxID = result.size() == 0 ? -1:result.get(0);
+            List<Integer> maxIDList =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
+            int maxID = maxIDList.size() == 1 ? maxIDList.get(0):-1 ;
             int id = maxID + 1;
             Date time = new Date(System.currentTimeMillis());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -207,9 +234,11 @@ public class MySQLiteDataManager {
             insertData.put("addDate",current);
             insertData.put("disabled","false");
             sh.executeInsert("dataRecords",insertData);
+            messagePrinter.print("insertDataRecords","ok",dataJSON,webSiteIndex+"",keyWordIndex+"");
             return id;
         }catch (Exception e){
             e.printStackTrace();
+            messagePrinter.print("insertDataRecords","error",dataJSON,webSiteIndex+"",keyWordIndex+"",e.getMessage());
             return -1;//出现错误
         }
     }
@@ -223,9 +252,15 @@ public class MySQLiteDataManager {
         if(sh == null){
             return new ArrayList<>();
         }
-        String exec = String.format("SELECT * FROM dataRecords WHERE ID = %d", id);
+        List<dataRecords> result = new ArrayList();
+
         try {
-            return sh.executeQueryList(exec,dataRecords.class);
+            if(id == -1){
+                result.addAll(sh.executeQueryList("SELECT * FROM dataRecords",dataRecords.class))  ;
+            }
+            String exec = String.format("SELECT * FROM dataRecords WHERE ID = %d", id);
+            result.addAll(sh.executeQueryList(exec,dataRecords.class))  ;
+            return  result;
         }catch (Exception e){
             e.printStackTrace();
             return new ArrayList<>();
@@ -268,13 +303,21 @@ public class MySQLiteDataManager {
     }
 
     public int insertSubscribe(String keyWordListJSON){//订阅 [indexOfKeywords] 订阅 = [关键词]
+        messagePrinter.print("insertSubscribe","insert",keyWordListJSON);
         if(sh == null){
+            messagePrinter.print("insertSubscribe","sh is null",keyWordListJSON);
             return -2;//空
         }
         try{
+            String isExisted = String.format("SELECT * FROM keyWords WHERE keyWordList = '%s' ",keyWordListJSON);
+            List<subscribe> result =  sh.executeQueryList(isExisted,subscribe.class);
+            if(result.size() == 1){
+                messagePrinter.print("insertSubscribe","existed",keyWordListJSON);
+                return result.get(0).getId();//存在 则直接返回
+            }
             String max = "SELECT MAX(ID) FROM subscribe ";
-            List<Integer> result =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
-            int maxID = result.size() == 0 ? -1:result.get(0);
+            List<Integer> maxIDList =  sh.executeQuery(max, (resultSet, i) -> resultSet.getInt("MAX(ID)"));
+            int maxID = maxIDList.size() == 1 ? maxIDList.get(0):-1 ;
             int id = maxID + 1;
             Date time = new Date(System.currentTimeMillis());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -285,9 +328,11 @@ public class MySQLiteDataManager {
             insertData.put("addDate",current);
             insertData.put("disabled","false");
             sh.executeInsert("subscribe",insertData);
+            messagePrinter.print("insertSubscribe","ok",keyWordListJSON);
             return id;
         }catch (Exception e){
             e.printStackTrace();
+            messagePrinter.print("insertSubscribe","error",keyWordListJSON,e.getMessage());
             return -1;//出现错误
         }
     }
@@ -320,211 +365,3 @@ public class MySQLiteDataManager {
 }
 
 
-class websiteConfiguration{
-    private int id;
-    private String url;
-    private String config;
-    private String addDate;
-    private String disabled;
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setAddDate(String addDate) {
-        this.addDate = addDate;
-    }
-
-    public void setConfig(String config) {
-        this.config = config;
-    }
-
-    public void setDisabled(String disabled) {
-        this.disabled = disabled;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getAddDate() {
-        return addDate;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public String getConfig() {
-        return config;
-    }
-
-    public boolean getDisabled() {
-        return disabled.equals("true");
-    }
-    public String getJSON(){
-        JSONObject job = new JSONObject();
-        job.put("id",id);
-        job.put("url",url);
-        job.put("config",config);
-        job.put("add",addDate);
-        job.put("disabled",disabled.equals("true"));
-        return job.toJSONString();
-    }
-}
-
-class subscribe{
-    private int id;
-    private String  keyWordList;
-    private String addDate;
-    private String disabled;
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setDisabled(String disabled) {
-        this.disabled = disabled;
-    }
-
-    public void setAddDate(String addDate) {
-        this.addDate = addDate;
-    }
-
-    public void setKeyWordList(String keyWordList) {
-        this.keyWordList = keyWordList;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getKeyWordList() {
-        return keyWordList;
-    }
-
-    public String getAddDate() {
-        return addDate;
-    }
-    public boolean getDisabled() {
-        return disabled.equals("true");
-    }
-    public String getJSON(){
-        JSONObject job = new JSONObject();
-        job.put("id",id);
-        job.put("keyWordList",keyWordList);
-        job.put("add",addDate);
-        job.put("disabled",disabled.equals("true"));
-        return job.toJSONString();
-    }
-}
-
-class keyWords{
-    private int id;
-    private String keyword;
-    private String addDate;
-    private String disabled;
-
-    public void setKeyWordList(String keyWordList) {
-        this.keyword = keyWordList;
-    }
-
-    public void setAddDate(String addDate) {
-        this.addDate = addDate;
-    }
-
-    public void setDisabled(String disabled) {
-        this.disabled = disabled;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getAddDate() {
-        return addDate;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getKeyWordList() {
-        return keyword;
-    }
-    public boolean getDisabled() {
-        return disabled.equals("true");
-    }
-    public String getJSON(){
-        JSONObject job = new JSONObject();
-        job.put("id",id);
-        job.put("keyword",keyword);
-        job.put("add",addDate);
-        job.put("disabled",disabled.equals("true"));
-        return job.toJSONString();
-    }
-}
-
-class dataRecords{
-    private int id;
-    private String dataJSON;
-    private int webSiteIndex;
-    private int keyWordIndex;
-    private String addDate;
-    private String disabled;
-    public void setId(int id) {
-        this.id = id;
-    }
-    public void setDisabled(String disabled) {
-        this.disabled = disabled;
-    }
-    public void setAddDate(String addDate) {
-        this.addDate = addDate;
-    }
-    public void setDataJSON(String dataJSON) {
-        this.dataJSON = dataJSON;
-    }
-    public void setKeyWordIndex(int keyWordIndex) {
-        this.keyWordIndex = keyWordIndex;
-    }
-    public void setWebSiteIndex(int webSiteIndex) {
-        this.webSiteIndex = webSiteIndex;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public int getKeyWordIndex() {
-        return keyWordIndex;
-    }
-
-    public int getWebSiteIndex() {
-        return webSiteIndex;
-    }
-
-    public String getAddDate() {
-        return addDate;
-    }
-
-    public String getDataJSON() {
-        return dataJSON;
-    }
-
-    public boolean getDisabled() {
-        return disabled.equals("true");
-    }
-    public String getJSON(){
-        JSONObject job = new JSONObject();
-        job.put("id",id);
-        job.put("dataJSON",dataJSON);
-        job.put("webSiteIndex",webSiteIndex);
-        job.put("keyWordIndex",keyWordIndex);
-        job.put("add",addDate);
-        job.put("disabled",disabled.equals("true"));
-        return job.toJSONString();
-    }
-}
